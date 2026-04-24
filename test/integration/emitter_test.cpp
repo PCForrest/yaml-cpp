@@ -101,7 +101,7 @@ TEST_F(EmitterTest, StringFormat) {
   out << "string";
   out << EndSeq;
 
-  ExpectEmit("- 'string'\n- \"string\"\n- |\n  string");
+  ExpectEmit("- 'string'\n- \"string\"\n- |-\n  string");
 }
 
 TEST_F(EmitterTest, IntBase) {
@@ -409,7 +409,7 @@ TEST_F(EmitterTest, ScalarFormat) {
       "- simple scalar\n- 'explicit single-quoted scalar'\n- \"explicit "
       "double-quoted scalar\"\n- \"auto-detected\\ndouble-quoted "
       "scalar\"\n- a "
-      "non-\"auto-detected\" double-quoted scalar\n- |\n  literal scalar\n "
+      "non-\"auto-detected\" double-quoted scalar\n- |-\n  literal scalar\n "
       " "
       "that may span\n  many, many\n  lines and have \"whatever\" "
       "crazy\tsymbols that we like");
@@ -424,10 +424,26 @@ TEST_F(EmitterTest, LiteralWithoutTrailingSpaces) {
   out << YAML::EndMap;
 
   ExpectEmit(
-      "key: |\n"
+      "key: |-\n"
       "  expect that with two newlines\n\n"
       "  no spaces are emitted in the empty line");
 }
+
+TEST_F(EmitterTest, LiteralWithAndWithoutTrailingEmptyLines) {
+  out << BeginSeq;
+  out << Literal << "A\nB";
+  out << Literal << "A\nB\n";
+  out << Literal << "A\nB\n\n\n";
+  out << "something";
+  out << EndSeq;
+
+  ExpectEmit(
+      "- |-\n  A\n  B\n"
+      "- |\n  A\n  B\n"
+      "- |+\n  A\n  B\n\n\n"
+      "- something");
+}
+
 
 TEST_F(EmitterTest, AutoLongKeyScalar) {
   out << BeginMap;
@@ -435,7 +451,7 @@ TEST_F(EmitterTest, AutoLongKeyScalar) {
   out << Value << "and its value";
   out << EndMap;
 
-  ExpectEmit("? |\n  multi-line\n  scalar\n: and its value");
+  ExpectEmit("? |-\n  multi-line\n  scalar\n: and its value");
 }
 
 TEST_F(EmitterTest, LongKeyFlowMap) {
@@ -717,7 +733,7 @@ TEST_F(EmitterTest, ComplexDoc) {
       "given: Dorothy\n  family: Gale\nitems:\n  - part_no: A4786\n    "
       "descrip: Water Bucket (Filled)\n    price: 1.47\n    quantity: 4\n  - "
       "part_no: E1628\n    descrip: High Heeled \"Ruby\" Slippers\n    price: "
-      "100.27\n    quantity: 1\nbill-to: &id001\n  street: |\n    123 Tornado "
+      "100.27\n    quantity: 1\nbill-to: &id001\n  street: |-\n    123 Tornado "
       "Alley\n    Suite 16\n  city: East Westville\n  state: KS\nship-to: "
       "*id001");
 }
@@ -1778,6 +1794,48 @@ TEST_F(EmitterErrorTest, InvalidAlias) {
   out << EndSeq;
 
   ExpectEmitError(ErrorMsg::INVALID_ALIAS);
+}
+
+TEST_F(EmitterTest, ShowTrailingZero) {
+  out << BeginSeq;
+  out.SetShowTrailingZero(false);
+  out << 0.;
+  out << -0.;
+  out << 3.;
+  out << 42.;
+  out.SetShowTrailingZero(true);
+  out << 0.;
+  out << -0.;
+  out << 4.;
+  out << 51.;
+  out.SetShowTrailingZero(false);
+  out << 0.2;
+  out << 5.12;
+  out.SetShowTrailingZero(true);
+  out << 0.2;
+  out << 6.34;
+  out << std::numeric_limits<double>::infinity();
+  out << -std::numeric_limits<double>::infinity();
+  out << std::numeric_limits<double>::quiet_NaN();
+  out << std::numeric_limits<double>::signaling_NaN();
+  out << EndSeq;
+
+  ExpectEmit(R"(- 0
+- -0
+- 3
+- 42
+- 0.0
+- -0.0
+- 4.0
+- 51.0
+- 0.2
+- 5.12
+- 0.2
+- 6.34
+- .inf
+- -.inf
+- .nan
+- .nan)");
 }
 
 }  // namespace

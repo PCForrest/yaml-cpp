@@ -305,6 +305,15 @@ TEST(NodeTest, MapIteratorWithUndefinedValues) {
   EXPECT_EQ(1, count);
 }
 
+TEST(NodeTest, DestroyedMapIterator) {
+  Node node;
+  node["key"] = "value";
+  Node valid_key_node = node.begin()->first;
+  EXPECT_EQ("key", valid_key_node.Scalar());
+  const Node& invalid_node = node.begin()->first;
+  EXPECT_THROW(invalid_node.UninstrumentedScalarForTesting(), BadDereference);
+}
+
 TEST(NodeTest, ConstIteratorOnConstUndefinedNode) {
   Node node;
   const Node& cn = node;
@@ -731,6 +740,12 @@ TEST(NodeTest, AccessNonexistentKeyOnConstNode) {
   node["3"] = "4";
   const YAML::Node& other = node;
   ASSERT_FALSE(other["5"]);
+}
+
+TEST(NodeTest, CreateMapWithFloatingPoint0Key) {
+  Node node;
+  node[0.1] = 1.0;
+  EXPECT_TRUE(node.IsMap());
 }
 
 class NodeEmitterTest : public ::testing::Test {
