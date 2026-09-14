@@ -1,4 +1,6 @@
-project "yaml-cpp"
+﻿local project_name = "yaml-cpp"
+
+project (project_name)
 	kind "StaticLib"
 	language "C++"
 
@@ -7,31 +9,30 @@ project "yaml-cpp"
 
     -- Not using precompiled headers
 
-	files
-	{
+	files {
 		"premake5.lua",
+		"cpp.hint",
+		"local.hint",
 		"src/**.h",
 		"src/**.cpp",
 		"include/**.h",
 	}
 
-	removefiles
-	{
+	removefiles	{
 		"premake5.lua",
+		"cpp.hint",
+		"local.hint",
 	}
 
-	includedirs
-	{
+	includedirs {
 		"include",
 	}
 
-	dependson
-	{
+	dependson {
 		-- nil
 	}
 
-	links
-	{
+	links {
 		-- nil
 	}
 
